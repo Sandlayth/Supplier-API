@@ -1,24 +1,24 @@
-package delivery
+package route
 
 import (
 	"encoding/json"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/sandlayth/supplier-api/public/entity"
-	"github.com/sandlayth/supplier-api/public/usecase"
+	"github.com/sandlayth/supplier-api/public/model"
+	"github.com/sandlayth/supplier-api/public/repository"
 )
 
 type UserHandler struct {
-	useCase usecase.UserUseCase
+	ur repository.UserRepository
 }
 
-func NewUserHandler(useCase usecase.UserUseCase) *UserHandler {
-	return &UserHandler{useCase: useCase}
+func NewUserHandler(r repository.UserRepository) *UserHandler {
+	return &UserHandler{ur: r}
 }
 
 func (h *UserHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
-	var requestBody entity.User
+	var requestBody model.User
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
 	if err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
@@ -26,9 +26,9 @@ func (h *UserHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Continue with the registration logic...
-	userID, err := h.useCase.Register(requestBody.Email, requestBody.Password, requestBody.FirstName, requestBody.LastName)
+	userID, err := h.ur.Register(requestBody.Email, requestBody.Password, requestBody.FirstName, requestBody.LastName)
 	if err != nil {
-		http.Error(w, "Failed to register user", http.StatusInternalServerError)
+		http.Error(w, "Failed to register user: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -48,7 +48,7 @@ func (h *UserHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.useCase.Login(requestBody.Email, requestBody.Password)
+	token, err := h.ur.Login(requestBody.Email, requestBody.Password)
 	if err != nil {
 		http.Error(w, "Failed to login", http.StatusUnauthorized)
 		return
@@ -63,7 +63,7 @@ func (h *UserHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	// Extract user ID from the request (@TODO later use authentication)
 	userID := mux.Vars(r)["id"]
 
-	err := h.useCase.Logout(userID)
+	err := h.ur.Logout(userID)
 	if err != nil {
 		http.Error(w, "Failed to logout", http.StatusInternalServerError)
 		return
@@ -76,7 +76,7 @@ func (h *UserHandler) GetUserInfoHandler(w http.ResponseWriter, r *http.Request)
 	// Extract user ID from the request (@TODO later use authentication)
 	userID := mux.Vars(r)["id"]
 
-	userInfo, err := h.useCase.GetUserInfo(userID)
+	userInfo, err := h.ur.GetUserInfo(userID)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
@@ -88,7 +88,7 @@ func (h *UserHandler) GetUserInfoHandler(w http.ResponseWriter, r *http.Request)
 
 func (h *UserHandler) ListAllUsersHandler(w http.ResponseWriter, r *http.Request) {
 	// Extract user ID from the request (@TODO later use authentication)
-	users, err := h.useCase.ListAll()
+	users, err := h.ur.ListAll()
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return

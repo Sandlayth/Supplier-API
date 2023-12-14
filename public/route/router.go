@@ -1,4 +1,4 @@
-package delivery
+package route
 
 import "github.com/gorilla/mux"
 

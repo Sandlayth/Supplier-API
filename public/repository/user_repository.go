@@ -1,12 +1,11 @@
 package repository
 
-import "github.com/sandlayth/supplier-api/public/entity"
+import "github.com/sandlayth/supplier-api/public/model"
 
 type UserRepository interface {
-	Create(user *entity.User) (string, error)
-	FindByEmail(email string) (*entity.User, error)
-	FindById(id string) (*entity.User, error)
-	Update(user *entity.User) error
-	Delete(id string) error
-	ListAll() (*[]entity.User, error)
+	Register(email, password, firstName, lastName string) (string, error)
+	Login(email, password string) (string, error)
+	Logout(userID string) error
+	GetUserInfo(userID string) (*model.User, error)
+	ListAll() (*[]model.User, error)
 }
