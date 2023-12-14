@@ -22,15 +22,18 @@ func main() {
 	db := client.Database("supplier-api")
 	userRepo := repository.NewUserMongoRepository(db)
 	locationRepo := repository.NewLocationMongoRepository(db)
+	supplierRepo := repository.NewSupplierMongoRepository(db)
 
 	// Initialize the handlers
 	userHandler := route.NewUserHandler(userRepo)
 	locationHandler := route.NewLocationHandler(locationRepo)
+	supplierHandler := route.NewSupplierHandler(supplierRepo)
 
 	// Initialize the router and add the routes
 	router := mux.NewRouter()
 	route.AddUserRoutes(router, userHandler)
 	route.AddLocationRoutes(router, locationHandler)
+	route.AddSupplierRoutes(router, supplierHandler)
 
 	// Start the HTTP server
 	log.Fatal(http.ListenAndServe(":8080", router))

@@ -18,3 +18,11 @@ func AddLocationRoutes(r *mux.Router, handler *LocationHandler) {
 	r.HandleFunc("/locations/{id}", handler.DeleteLocationHandler).Methods("DELETE")
 	r.HandleFunc("/locations", handler.ListAllLocationsHandler).Methods("GET")
 }
+
+func AddSupplierRoutes(r *mux.Router, handler *SupplierHandler) {
+	r.HandleFunc("/suppliers/{id}", handler.GetSupplierByIDHandler).Methods("GET")
+	r.HandleFunc("/suppliers", handler.GetAllSuppliersHandler).Methods("GET")
+	r.HandleFunc("/suppliers", handler.CreateSupplierHandler).Methods("POST")
+	r.HandleFunc("/suppliers/{id}", handler.UpdateSupplierHandler).Methods("PUT")
+	r.HandleFunc("/suppliers/{id}", handler.DeleteSupplierHandler).Methods("DELETE")
+}
