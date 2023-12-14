@@ -10,12 +10,14 @@ import (
 )
 
 type SupplierMongoRepository struct {
-	collection *mongo.Collection
+	suppliersCollection *mongo.Collection
+	locationsCollection *mongo.Collection
 }
 
 func NewSupplierMongoRepository(db *mongo.Database) *SupplierMongoRepository {
 	return &SupplierMongoRepository{
-		collection: db.Collection("suppliers"),
+		suppliersCollection: db.Collection("suppliers"),
+		locationsCollection: db.Collection("locations"),
 	}
 }
 
@@ -26,7 +28,7 @@ func (r *SupplierMongoRepository) GetSupplierByID(id string) (*model.Supplier, e
 	if err != nil {
 		return nil, err
 	}
-	err = r.collection.FindOne(context.Background(), bson.M{"_id": idSupplier}).Decode(&supplier)
+	err = r.suppliersCollection.FindOne(context.Background(), bson.M{"_id": idSupplier}).Decode(&supplier)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +38,7 @@ func (r *SupplierMongoRepository) GetSupplierByID(id string) (*model.Supplier, e
 // GetAllSuppliers retrieves a list of all suppliers from the database.
 func (r *SupplierMongoRepository) ListAll() ([]model.Supplier, error) {
 	var suppliers []model.Supplier
-	cursor, err := r.collection.Find(context.Background(), bson.M{})
+	cursor, err := r.suppliersCollection.Find(context.Background(), bson.M{})
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +53,7 @@ func (r *SupplierMongoRepository) ListAll() ([]model.Supplier, error) {
 
 // CreateSupplier adds a new supplier to the database.
 func (r *SupplierMongoRepository) CreateSupplier(supplier *model.Supplier) error {
-	_, err := r.collection.InsertOne(context.Background(), supplier)
+	_, err := r.suppliersCollection.InsertOne(context.Background(), supplier)
 	return err
 }
 
@@ -61,7 +63,7 @@ func (r *SupplierMongoRepository) UpdateSupplier(id string, updatedSupplier *mod
 	if err != nil {
 		return err
 	}
-	_, err = r.collection.UpdateOne(context.Background(), bson.M{"_id": idSupplier}, bson.M{"$set": updatedSupplier})
+	_, err = r.suppliersCollection.UpdateOne(context.Background(), bson.M{"_id": idSupplier}, bson.M{"$set": updatedSupplier})
 	return err
 }
 
@@ -71,6 +73,12 @@ func (r *SupplierMongoRepository) DeleteSupplier(id string) error {
 	if err != nil {
 		return err
 	}
-	_, err = r.collection.DeleteOne(context.Background(), bson.M{"_id": idSupplier})
+	// First delete all locations related to the Supplier
+	_, err = r.locationsCollection.DeleteMany(context.Background(), bson.M{"supplier": idSupplier})
+	if err != nil {
+		return err
+	}
+	// Then delete the Supplier
+	_, err = r.suppliersCollection.DeleteOne(context.Background(), bson.M{"_id": idSupplier})
 	return err
 }

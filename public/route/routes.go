@@ -17,6 +17,7 @@ func AddLocationRoutes(r *mux.Router, handler *LocationHandler) {
 	r.HandleFunc("/locations/{id}", handler.UpdateLocationHandler).Methods("PUT")
 	r.HandleFunc("/locations/{id}", handler.DeleteLocationHandler).Methods("DELETE")
 	r.HandleFunc("/locations", handler.ListAllLocationsHandler).Methods("GET")
+	r.HandleFunc("/locations/supplier/{id}", handler.ListBySupplierHandler).Methods("GET")
 }
 
 func AddSupplierRoutes(r *mux.Router, handler *SupplierHandler) {

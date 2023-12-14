@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sandlayth/supplier-api/public/model"
 	"go.mongodb.org/mongo-driver/bson"
@@ -10,18 +11,24 @@ import (
 )
 
 type LocationMongoRepository struct {
-	collection *mongo.Collection
+	locationsCollection *mongo.Collection
+	suppliersCollection *mongo.Collection
 }
 
 func NewLocationMongoRepository(db *mongo.Database) *LocationMongoRepository {
 	return &LocationMongoRepository{
-		collection: db.Collection("locations"),
+		locationsCollection: db.Collection("locations"),
+		suppliersCollection: db.Collection("suppliers"),
 	}
 }
 
 // CreateLocation adds a new location to the database.
 func (r *LocationMongoRepository) CreateLocation(location *model.Location) error {
-	_, err := r.collection.InsertOne(context.Background(), location)
+	err := r.supplierExists(location.SupplierID)
+	if err != nil {
+		return err
+	}
+	_, err = r.locationsCollection.InsertOne(context.Background(), location)
 	return err
 }
 
@@ -33,7 +40,7 @@ func (r *LocationMongoRepository) GetLocationByID(id string) (*model.Location, e
 	}
 
 	var location model.Location
-	err = r.collection.FindOne(context.Background(), bson.M{"_id": objectID}).Decode(&location)
+	err = r.locationsCollection.FindOne(context.Background(), bson.M{"_id": objectID}).Decode(&location)
 	if err != nil {
 		return nil, err
 	}
@@ -46,8 +53,12 @@ func (r *LocationMongoRepository) UpdateLocation(id string, updatedLocation *mod
 	if err != nil {
 		return err
 	}
+	err = r.supplierExists(updatedLocation.SupplierID)
+	if err != nil {
+		return err
+	}
 
-	_, err = r.collection.UpdateOne(context.Background(), bson.M{"_id": objectID}, bson.M{"$set": updatedLocation})
+	_, err = r.locationsCollection.UpdateOne(context.Background(), bson.M{"_id": objectID}, bson.M{"$set": updatedLocation})
 	return err
 }
 
@@ -58,14 +69,14 @@ func (r *LocationMongoRepository) DeleteLocation(id string) error {
 		return err
 	}
 
-	_, err = r.collection.DeleteOne(context.Background(), bson.M{"_id": objectID})
+	_, err = r.locationsCollection.DeleteOne(context.Background(), bson.M{"_id": objectID})
 	return err
 }
 
 // ListAll retrieves a list of all locations from the database.
 func (r *LocationMongoRepository) ListAll() ([]model.Location, error) {
 	var locations []model.Location
-	cursor, err := r.collection.Find(context.Background(), bson.M{})
+	cursor, err := r.locationsCollection.Find(context.Background(), bson.M{})
 	if err != nil {
 		return nil, err
 	}
@@ -76,4 +87,36 @@ func (r *LocationMongoRepository) ListAll() ([]model.Location, error) {
 		return nil, err
 	}
 	return locations, nil
+}
+
+// ListBySupplier retrieves a list of all locations for a specific supplier from the database.
+func (r *LocationMongoRepository) ListBySupplier(id string) ([]model.Location, error) {
+	var locations []model.Location
+
+	supplierID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+	cursor, err := r.locationsCollection.Find(context.Background(), bson.M{"supplier": supplierID})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.Background())
+
+	err = cursor.All(context.Background(), &locations)
+	if err != nil {
+		return nil, err
+	}
+	return locations, nil
+}
+
+func (r *LocationMongoRepository) supplierExists(supplierID primitive.ObjectID) (error) {
+	count, err := r.suppliersCollection.CountDocuments(context.Background(), bson.M{"_id": supplierID})
+	if err != nil {
+		return err
+	}
+	if count == 0 {
+		return fmt.Errorf("supplier with ID %s does not exist", supplierID.Hex())
+	}
+	return nil
 }
