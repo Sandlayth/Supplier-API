@@ -5,11 +5,13 @@ import (
 )
 
 func AddUserRoutes(r *mux.Router, handler *UserHandler) {
-	r.HandleFunc("/users/register", handler.RegisterHandler).Methods("POST")
-	r.HandleFunc("/users/login", handler.LoginHandler).Methods("POST")
-	r.HandleFunc("/users/logout", handler.LogoutHandler).Methods("POST")
-	r.HandleFunc("/users/{id}", handler.GetUserInfoHandler).Methods("GET")
-	r.HandleFunc("/users", handler.ListAllUsersHandler).Methods("GET")
+	r.HandleFunc("/users", handler.CreateUserHandler).Methods("POST")
+	r.HandleFunc("/users/{id}", handler.GetUserHandler).Methods("GET")
+	r.HandleFunc("/users/{id}", handler.UpdateUserHandler).Methods("PUT")
+	r.HandleFunc("/users/{id}", handler.DeleteUserHandler).Methods("DELETE")
+	r.HandleFunc("/users", handler.ListUsersHandler).Methods("GET")
+//	r.HandleFunc("/login", handler.LoginHandler).Methods("POST")
+//	r.HandleFunc("/logout", handler.LogoutHandler).Methods("POST")
 }
 
 func AddLocationRoutes(r *mux.Router, handler *LocationHandler) {

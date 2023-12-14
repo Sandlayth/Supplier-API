@@ -3,9 +3,8 @@ package repository
 import (
 	"context"
 	"errors"
-	"log"
-	"golang.org/x/crypto/bcrypt"
-
+	"net/mail"
+	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -24,160 +23,118 @@ func NewUserMongoRepository(db *mongo.Database) *UserMongoRepository {
 	}
 }
 
-func (r *UserMongoRepository) create(user *model.User) (string, error) {
-	result, err := r.collection.InsertOne(context.Background(), user)
-	if err != nil {
-		log.Printf("Error creating user: %v\n", err)
-		return "", err
+// CreateUser adds a new user to the database.
+func (r *UserMongoRepository) CreateUser(user *model.User) error {
+	if err := r.validateUser(user); err != nil {
+		return err
 	}
+
+	result, err := r.collection.InsertOne(context.Background(), user)
+	// Update the purchase with the new ID
 	insertedID, ok := result.InsertedID.(primitive.ObjectID)
 	if !ok {
-		log.Printf("Error converting inserted ID to primitive.ObjectID\n")
-		return "", errors.New("inserted ID is not a primitive.ObjectID")
+		return errors.New("inserted ID is not a primitive.ObjectID")
 	}
-	return insertedID.Hex(), nil
+	user.ID = insertedID
+	return err
 }
 
-func (r *UserMongoRepository) findByEmail(email string) (*model.User, error) {
-	user := &model.User{}
-	err := r.collection.FindOne(context.Background(), bson.M{"email": email}).Decode(user)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			log.Printf("User not found for email: %s\n", email)
-			return nil, nil // Return nil, nil when user is not found
-		}
-
-		log.Printf("Error finding user by email: %v\n", err)
-		return nil, err
-	}
-
-	log.Printf("User found for email: %s, ID: %s\n", email, user.ID)
-	return user, nil
-}
-
-func (r *UserMongoRepository) findById(id string) (*model.User, error) {
+// GetUserByID retrieves a user by ID from the database.
+func (r *UserMongoRepository) GetUserByID(id string) (*model.User, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		log.Printf("Error converting ID to primitive.ObjectID: %v\n", err)
 		return nil, err
 	}
 
-	user := &model.User{}
-	err = r.collection.FindOne(context.Background(), bson.M{"_id": objectID}).Decode(user)
+	var user model.User
+	err = r.collection.FindOne(context.Background(), bson.M{"_id": objectID}).Decode(&user)
 	if err != nil {
-		log.Printf("Error finding user by ID: %v\n", err)
 		return nil, err
 	}
-	return user, nil
+	return &user, nil
 }
 
-func (r *UserMongoRepository) update(user *model.User) error {
-	_, err := r.collection.ReplaceOne(context.Background(), bson.M{"_id": user.ID}, user)
+// GetUserByEmail retrieves a user by email from the database.
+func (r *UserMongoRepository) GetUserByEmail(email string) (*model.User, error) {
+	var user model.User
+	err := r.collection.FindOne(context.Background(), bson.M{"email": email}).Decode(&user)
 	if err != nil {
-		log.Printf("Error updating user: %v\n", err)
+		return nil, err
+	}
+	return &user, nil
+}
+
+// UpdateUser updates an existing user in the database.
+func (r *UserMongoRepository) UpdateUser(id string, updatedUser *model.User) error {
+	if err := r.validateUser(updatedUser); err != nil {
 		return err
 	}
-	return nil
-}
-
-func (r *UserMongoRepository) delete(id string) error {
-	_, err := r.collection.DeleteOne(context.Background(), bson.M{"_id": id})
+	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		log.Printf("Error deleting user: %v\n", err)
 		return err
 	}
-	return nil
+	_, err = r.collection.UpdateOne(context.Background(), bson.M{"_id": objectID}, bson.M{"$set": updatedUser})
+	updatedUser.ID = objectID
+	return err
 }
 
-func (r *UserMongoRepository) listAll() (*[]model.User, error) {
+// DeleteUser removes a user from the database by ID.
+func (r *UserMongoRepository) DeleteUser(id string) error {
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+
+	_, err = r.collection.DeleteOne(context.Background(), bson.M{"_id": objectID})
+	return err
+}
+
+// ListUsers retrieves a list of all users from the database.
+func (r *UserMongoRepository) ListUsers() ([]model.User, error) {
+	var users []model.User
 	cursor, err := r.collection.Find(context.Background(), bson.M{})
 	if err != nil {
-		log.Printf("Error listing all users: %v\n", err)
+		return nil, err
+	}
+	defer cursor.Close(context.Background())
+
+	err = cursor.All(context.Background(), &users)
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+func (r *UserMongoRepository) ListAll() (*[]model.User, error) {
+	cursor, err := r.collection.Find(context.Background(), bson.M{})
+	if err != nil {
 		return nil, err
 	}
 
 	var results []model.User
 
 	if err = cursor.All(context.TODO(), &results); err != nil {
-		log.Printf("Error on the cursor when listing all users: %v\n", err)
 		return nil, err
 	}
 
 	return &results, nil
 }
 
-func (r *UserMongoRepository) Register(email, password, firstName, lastName string) (string, error) {
-	// Check if the user with the given email already exists
-	existingUser, err := r.findByEmail(email)
-	if err == nil && existingUser != nil {
-		log.Print(err)
-		return "", errors.New("user with the given email already exists")
+func (r *UserMongoRepository) validateUser(user *model.User) error {
+	err := "Error when validating user input: "
+	if _, e := mail.ParseAddress(user.Email); e != nil {
+		return errors.New(err + "invalid email")
 	}
-
-	// Hash the password before storing it
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return "", err
+	if len(strings.TrimSpace(user.FirstName)) == 0 {
+		return errors.New(err + "invalid firstName field")
 	}
-
-	newUser := &model.User{
-		Email:     email,
-		Password:  string(hashedPassword),
-		FirstName: firstName,
-		LastName:  lastName,
+	if len(strings.TrimSpace(user.LastName)) == 0 {
+		return errors.New(err + "invalid lastName field")
 	}
-
-	userID, err := r.create(newUser)
-	if err != nil {
-		return "", err
+	if len(strings.TrimSpace(user.Password)) == 0 {
+		return errors.New(err + "invalid password field")
 	}
-
-	return userID, nil
-}
-
-func (r *UserMongoRepository) Login(email, password string) (string, error) {
-	// Find user by email
-	user, err := r.findByEmail(email)
-	if err != nil {
-		return "", errors.New("invalid credentials")
+	if user.Role != "manager" && user.Role != "admin" {
+		return errors.New(err + "invalid role field")
 	}
-
-	// Compare hashed password with the provided password
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	if err != nil {
-		return "", errors.New("invalid credentials")
-	}
-
-	// Generate and return an authentication token (@TODO later use JWT token)
-	// For simplicity, let's return the user ID as the token
-	return user.ID.Hex(), nil
-}
-
-func (r *UserMongoRepository) Logout(userID string) error {
-	// Perform any necessary cleanup or token invalidation logic
-	// For simplicity, no additional logic is added
 	return nil
-}
-
-func (r *UserMongoRepository) GetUserInfo(userID string) (*model.User, error) {
-	// Find user by ID
-	user, err := r.findById(userID)
-	if err != nil {
-		return nil, errors.New("user not found")
-	}
-
-	// Omit sensitive information before returning user data
-	user.Password = "" // Do not expose the hashed password
-
-	return user, nil
-}
-
-func (r *UserMongoRepository) ListAll() (*[]model.User, error) {
-	// Find user by ID
-	users, err := r.listAll()
-	if err != nil {
-		return nil, err
-	}
-
-	return users, nil
 }
