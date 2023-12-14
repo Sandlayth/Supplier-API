@@ -27,3 +27,13 @@ func AddSupplierRoutes(r *mux.Router, handler *SupplierHandler) {
 	r.HandleFunc("/suppliers/{id}", handler.UpdateSupplierHandler).Methods("PUT")
 	r.HandleFunc("/suppliers/{id}", handler.DeleteSupplierHandler).Methods("DELETE")
 }
+
+// AddPurchaseRoutes adds purchase-related routes to the provided router.
+func AddPurchaseRoutes(r *mux.Router, handler *PurchaseHandler) {
+	r.HandleFunc("/purchases", handler.CreatePurchaseHandler).Methods("POST")
+	r.HandleFunc("/purchases/{id}", handler.GetPurchaseHandler).Methods("GET")
+	r.HandleFunc("/purchases/{id}", handler.UpdatePurchaseHandler).Methods("PUT")
+	r.HandleFunc("/purchases/{id}", handler.DeletePurchaseHandler).Methods("DELETE")
+	r.HandleFunc("/purchases", handler.ListAllPurchasesHandler).Methods("GET")
+	r.HandleFunc("/purchases/user/{userID}", handler.ListPurchasesByUserHandler).Methods("GET")
+}
