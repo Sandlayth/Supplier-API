@@ -32,9 +32,7 @@ func (h *UserHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := map[string]string{"userID": userID}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	respondJSON(w, map[string]string{"userID": userID})
 }
 
 func (h *UserHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
@@ -54,9 +52,7 @@ func (h *UserHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := map[string]string{"token": token}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	respondJSON(w, map[string]string{"token": token})
 }
 
 func (h *UserHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
@@ -82,8 +78,7 @@ func (h *UserHandler) GetUserInfoHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(userInfo)
+	respondJSON(w, userInfo)
 }
 
 func (h *UserHandler) ListAllUsersHandler(w http.ResponseWriter, r *http.Request) {
@@ -94,6 +89,5 @@ func (h *UserHandler) ListAllUsersHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(users)
+	respondJSON(w, users)
 }

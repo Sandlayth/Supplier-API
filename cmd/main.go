@@ -5,8 +5,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/sandlayth/supplier-api/public/route"
+	"github.com/gorilla/mux"
 	"github.com/sandlayth/supplier-api/public/repository"
+	"github.com/sandlayth/supplier-api/public/route"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -17,15 +18,19 @@ func main() {
 	client := initDb()
 	defer client.Disconnect(context.Background())
 
-	// Select the database and initialize the repository
+	// Select the database and initialize the repositories
 	db := client.Database("supplier-api")
-	userRepo := repository.NewMongoRepository(db)
+	userRepo := repository.NewUserMongoRepository(db)
+	locationRepo := repository.NewLocationMongoRepository(db)
 
-	// Initialize the handler
-	handler := route.NewUserHandler(userRepo)
+	// Initialize the handlers
+	userHandler := route.NewUserHandler(userRepo)
+	locationHandler := route.NewLocationHandler(locationRepo)
 
-	// Initialize the router
-	router := route.NewRouter(handler)
+	// Initialize the router and add the routes
+	router := mux.NewRouter()
+	route.AddUserRoutes(router, userHandler)
+	route.AddLocationRoutes(router, locationHandler)
 
 	// Start the HTTP server
 	log.Fatal(http.ListenAndServe(":8080", router))

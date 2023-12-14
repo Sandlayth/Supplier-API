@@ -14,17 +14,17 @@ import (
 	"github.com/sandlayth/supplier-api/public/model"
 )
 
-type MongoRepository struct {
+type UserMongoRepository struct {
 	collection *mongo.Collection
 }
 
-func NewMongoRepository(db *mongo.Database) *MongoRepository {
-	return &MongoRepository{
+func NewUserMongoRepository(db *mongo.Database) *UserMongoRepository {
+	return &UserMongoRepository{
 		collection: db.Collection("users"),
 	}
 }
 
-func (r *MongoRepository) create(user *model.User) (string, error) {
+func (r *UserMongoRepository) create(user *model.User) (string, error) {
 	result, err := r.collection.InsertOne(context.Background(), user)
 	if err != nil {
 		log.Printf("Error creating user: %v\n", err)
@@ -38,7 +38,7 @@ func (r *MongoRepository) create(user *model.User) (string, error) {
 	return insertedID.Hex(), nil
 }
 
-func (r *MongoRepository) findByEmail(email string) (*model.User, error) {
+func (r *UserMongoRepository) findByEmail(email string) (*model.User, error) {
 	user := &model.User{}
 	err := r.collection.FindOne(context.Background(), bson.M{"email": email}).Decode(user)
 	if err != nil {
@@ -55,7 +55,7 @@ func (r *MongoRepository) findByEmail(email string) (*model.User, error) {
 	return user, nil
 }
 
-func (r *MongoRepository) findById(id string) (*model.User, error) {
+func (r *UserMongoRepository) findById(id string) (*model.User, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		log.Printf("Error converting ID to primitive.ObjectID: %v\n", err)
@@ -71,7 +71,7 @@ func (r *MongoRepository) findById(id string) (*model.User, error) {
 	return user, nil
 }
 
-func (r *MongoRepository) update(user *model.User) error {
+func (r *UserMongoRepository) update(user *model.User) error {
 	_, err := r.collection.ReplaceOne(context.Background(), bson.M{"_id": user.ID}, user)
 	if err != nil {
 		log.Printf("Error updating user: %v\n", err)
@@ -80,7 +80,7 @@ func (r *MongoRepository) update(user *model.User) error {
 	return nil
 }
 
-func (r *MongoRepository) delete(id string) error {
+func (r *UserMongoRepository) delete(id string) error {
 	_, err := r.collection.DeleteOne(context.Background(), bson.M{"_id": id})
 	if err != nil {
 		log.Printf("Error deleting user: %v\n", err)
@@ -89,7 +89,7 @@ func (r *MongoRepository) delete(id string) error {
 	return nil
 }
 
-func (r *MongoRepository) listAll() (*[]model.User, error) {
+func (r *UserMongoRepository) listAll() (*[]model.User, error) {
 	cursor, err := r.collection.Find(context.Background(), bson.M{})
 	if err != nil {
 		log.Printf("Error listing all users: %v\n", err)
@@ -106,7 +106,7 @@ func (r *MongoRepository) listAll() (*[]model.User, error) {
 	return &results, nil
 }
 
-func (r *MongoRepository) Register(email, password, firstName, lastName string) (string, error) {
+func (r *UserMongoRepository) Register(email, password, firstName, lastName string) (string, error) {
 	// Check if the user with the given email already exists
 	existingUser, err := r.findByEmail(email)
 	if err == nil && existingUser != nil {
@@ -135,7 +135,7 @@ func (r *MongoRepository) Register(email, password, firstName, lastName string) 
 	return userID, nil
 }
 
-func (r *MongoRepository) Login(email, password string) (string, error) {
+func (r *UserMongoRepository) Login(email, password string) (string, error) {
 	// Find user by email
 	user, err := r.findByEmail(email)
 	if err != nil {
@@ -153,13 +153,13 @@ func (r *MongoRepository) Login(email, password string) (string, error) {
 	return user.ID.Hex(), nil
 }
 
-func (r *MongoRepository) Logout(userID string) error {
+func (r *UserMongoRepository) Logout(userID string) error {
 	// Perform any necessary cleanup or token invalidation logic
 	// For simplicity, no additional logic is added
 	return nil
 }
 
-func (r *MongoRepository) GetUserInfo(userID string) (*model.User, error) {
+func (r *UserMongoRepository) GetUserInfo(userID string) (*model.User, error) {
 	// Find user by ID
 	user, err := r.findById(userID)
 	if err != nil {
@@ -172,7 +172,7 @@ func (r *MongoRepository) GetUserInfo(userID string) (*model.User, error) {
 	return user, nil
 }
 
-func (r *MongoRepository) ListAll() (*[]model.User, error) {
+func (r *UserMongoRepository) ListAll() (*[]model.User, error) {
 	// Find user by ID
 	users, err := r.listAll()
 	if err != nil {
