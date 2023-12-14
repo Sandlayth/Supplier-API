@@ -1,12 +1,13 @@
-package route
+package handler
 
 import (
 	"encoding/json"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/sandlayth/supplier-api/public/model"
-	"github.com/sandlayth/supplier-api/public/repository"
+	"github.com/sandlayth/supplier-api/helper"
+	"github.com/sandlayth/supplier-api/model"
+	"github.com/sandlayth/supplier-api/repository"
 )
 
 type SupplierHandler struct {
@@ -29,7 +30,7 @@ func (h *SupplierHandler) GetSupplierByIDHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	respondJSON(w, supplier)
+	helper.RespondJSON(w, supplier)
 }
 
 // GetAllSuppliersHandler handles requests to retrieve all suppliers.
@@ -40,7 +41,7 @@ func (h *SupplierHandler) GetAllSuppliersHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	respondJSON(w, suppliers)
+	helper.RespondJSON(w, suppliers)
 }
 
 // CreateSupplierHandler handles requests to create a new supplier.
@@ -58,7 +59,7 @@ func (h *SupplierHandler) CreateSupplierHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	respondJSON(w, map[string]string{"message": "Supplier created successfully"})
+	helper.RespondJSON(w, map[string]string{"message": "Supplier created successfully"})
 }
 
 // UpdateSupplierHandler handles requests to update an existing supplier.
@@ -79,7 +80,7 @@ func (h *SupplierHandler) UpdateSupplierHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	respondJSON(w, map[string]string{"message": "Supplier updated successfully"})
+	helper.RespondJSON(w, map[string]string{"message": "Supplier updated successfully"})
 }
 
 // DeleteSupplierHandler handles requests to delete a supplier by ID.
@@ -93,5 +94,5 @@ func (h *SupplierHandler) DeleteSupplierHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	respondJSON(w, map[string]string{"message": "Supplier deleted successfully"})
+	helper.RespondJSON(w, map[string]string{"message": "Supplier deleted successfully"})
 }

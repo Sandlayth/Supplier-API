@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/sandlayth/supplier-api/public/model"
+	"github.com/sandlayth/supplier-api/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -23,7 +23,7 @@ func NewPurchaseMongoRepository(db *mongo.Database) *PurchaseMongoRepository {
 	return &PurchaseMongoRepository{
 		purchasesCollection: db.Collection("purchases"),
 		locationsCollection: db.Collection("locations"),
-		usersCollection: db.Collection("users"),
+		usersCollection:     db.Collection("users"),
 	}
 }
 
@@ -33,13 +33,13 @@ func (r *PurchaseMongoRepository) CreatePurchase(purchase *model.Purchase) error
 	if err := r.validateUser(purchase.UserID); err != nil {
 		return err
 	}
-	
+
 	totalPrice, err := r.calculatePrice(purchase)
 	if err != nil {
 		return err
-	} 
+	}
 	purchase.TotalPrice = totalPrice
-	
+
 	// Continue with purchase creation
 	result, err := r.purchasesCollection.InsertOne(context.Background(), purchase)
 
@@ -77,11 +77,11 @@ func (r *PurchaseMongoRepository) UpdatePurchase(id string, updatedPurchase *mod
 	if err := r.validateUser(updatedPurchase.UserID); err != nil {
 		return err
 	}
-	
+
 	totalPrice, err := r.calculatePrice(updatedPurchase)
 	if err != nil {
 		return err
-	} 
+	}
 	updatedPurchase.TotalPrice = totalPrice
 
 	_, err = r.purchasesCollection.UpdateOne(context.Background(), bson.M{"_id": objectID}, bson.M{"$set": updatedPurchase})
@@ -124,7 +124,7 @@ func (r *PurchaseMongoRepository) ListPurchasesByUser(user string) ([]model.Purc
 	if err := r.validateUser(userID); err != nil {
 		return nil, err
 	}
-	
+
 	var purchases []model.Purchase
 	cursor, err := r.purchasesCollection.Find(context.Background(), bson.M{"user": userID})
 	if err != nil {

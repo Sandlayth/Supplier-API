@@ -1,6 +1,8 @@
-package route
+package handler
 
-import "github.com/gorilla/mux"
+import (
+	"github.com/gorilla/mux"
+)
 
 func AddUserRoutes(r *mux.Router, handler *UserHandler) {
 	r.HandleFunc("/users/register", handler.RegisterHandler).Methods("POST")

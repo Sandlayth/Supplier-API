@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"github.com/sandlayth/supplier-api/public/model"
+	"github.com/sandlayth/supplier-api/model"
 )
 
 type LocationRepository interface {

@@ -1,6 +1,6 @@
 package repository
 
-import "github.com/sandlayth/supplier-api/public/model"
+import "github.com/sandlayth/supplier-api/model"
 
 type UserRepository interface {
 	Register(email, password, firstName, lastName string) (string, error)

@@ -1,12 +1,13 @@
-package route
+package handler
 
 import (
 	"encoding/json"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/sandlayth/supplier-api/public/model"
-	"github.com/sandlayth/supplier-api/public/repository"
+	"github.com/sandlayth/supplier-api/helper"
+	"github.com/sandlayth/supplier-api/model"
+	"github.com/sandlayth/supplier-api/repository"
 )
 
 type UserHandler struct {
@@ -32,7 +33,7 @@ func (h *UserHandler) RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondJSON(w, map[string]string{"userID": userID})
+	helper.RespondJSON(w, map[string]string{"userID": userID})
 }
 
 func (h *UserHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
@@ -52,7 +53,7 @@ func (h *UserHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respondJSON(w, map[string]string{"token": token})
+	helper.RespondJSON(w, map[string]string{"token": token})
 }
 
 func (h *UserHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
@@ -78,7 +79,7 @@ func (h *UserHandler) GetUserInfoHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	respondJSON(w, userInfo)
+	helper.RespondJSON(w, userInfo)
 }
 
 func (h *UserHandler) ListAllUsersHandler(w http.ResponseWriter, r *http.Request) {
@@ -89,5 +90,5 @@ func (h *UserHandler) ListAllUsersHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	respondJSON(w, users)
+	helper.RespondJSON(w, users)
 }

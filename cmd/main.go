@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/sandlayth/supplier-api/public/repository"
-	"github.com/sandlayth/supplier-api/public/route"
+	"github.com/sandlayth/supplier-api/repository"
+	"github.com/sandlayth/supplier-api/handler"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -26,17 +26,17 @@ func main() {
 	purchaseRepo := repository.NewPurchaseMongoRepository(db)
 
 	// Initialize the handlers
-	userHandler := route.NewUserHandler(userRepo)
-	locationHandler := route.NewLocationHandler(locationRepo)
-	supplierHandler := route.NewSupplierHandler(supplierRepo)
-	purchaseHandler := route.NewPurchaseHandler(purchaseRepo)
+	userHandler := handler.NewUserHandler(userRepo)
+	locationHandler := handler.NewLocationHandler(locationRepo)
+	supplierHandler := handler.NewSupplierHandler(supplierRepo)
+	purchaseHandler := handler.NewPurchaseHandler(purchaseRepo)
 
 	// Initialize the router and add the routes
 	router := mux.NewRouter()
-	route.AddUserRoutes(router, userHandler)
-	route.AddLocationRoutes(router, locationHandler)
-	route.AddSupplierRoutes(router, supplierHandler)
-	route.AddPurchaseRoutes(router, purchaseHandler)
+	handler.AddUserRoutes(router, userHandler)
+	handler.AddLocationRoutes(router, locationHandler)
+	handler.AddSupplierRoutes(router, supplierHandler)
+	handler.AddPurchaseRoutes(router, purchaseHandler)
 
 	// Start the HTTP server
 	log.Fatal(http.ListenAndServe(":8080", router))

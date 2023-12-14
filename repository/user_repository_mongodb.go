@@ -11,7 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/sandlayth/supplier-api/public/model"
+	"github.com/sandlayth/supplier-api/model"
 )
 
 type UserMongoRepository struct {

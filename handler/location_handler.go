@@ -1,12 +1,13 @@
-package route
+package handler
 
 import (
 	"encoding/json"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/sandlayth/supplier-api/public/model"
-	"github.com/sandlayth/supplier-api/public/repository"
+	"github.com/sandlayth/supplier-api/helper"
+	"github.com/sandlayth/supplier-api/model"
+	"github.com/sandlayth/supplier-api/repository"
 )
 
 type LocationHandler struct {
@@ -32,7 +33,7 @@ func (h *LocationHandler) CreateLocationHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	respondJSON(w, map[string]string{"message": "Location created successfully"})
+	helper.RespondJSON(w, map[string]string{"message": "Location created successfully"})
 }
 
 // GetLocationByIDHandler handles requests to retrieve a location by ID.
@@ -46,7 +47,7 @@ func (h *LocationHandler) GetLocationByIDHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	respondJSON(w, location)
+	helper.RespondJSON(w, location)
 }
 
 // UpdateLocationHandler handles requests to update an existing location.
@@ -67,7 +68,7 @@ func (h *LocationHandler) UpdateLocationHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	respondJSON(w, map[string]string{"message": "Location updated successfully"})
+	helper.RespondJSON(w, map[string]string{"message": "Location updated successfully"})
 }
 
 // DeleteLocationHandler handles requests to delete a location by ID.
@@ -81,7 +82,7 @@ func (h *LocationHandler) DeleteLocationHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	respondJSON(w, map[string]string{"message": "Location deleted successfully"})
+	helper.RespondJSON(w, map[string]string{"message": "Location deleted successfully"})
 }
 
 // GetAllLocationsHandler handles requests to retrieve all unique locations.
@@ -92,7 +93,7 @@ func (h *LocationHandler) ListAllLocationsHandler(w http.ResponseWriter, r *http
 		return
 	}
 
-	respondJSON(w, locations)
+	helper.RespondJSON(w, locations)
 }
 
 // ListBySupplierHandler handles requests to retrieve a list of all locations for a specific supplier.
@@ -106,5 +107,5 @@ func (h *LocationHandler) ListBySupplierHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	respondJSON(w, locations)
+	helper.RespondJSON(w, locations)
 }

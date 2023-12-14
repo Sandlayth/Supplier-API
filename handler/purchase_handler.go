@@ -1,12 +1,13 @@
-package route
+package handler
 
 import (
 	"encoding/json"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/sandlayth/supplier-api/public/model"
-	"github.com/sandlayth/supplier-api/public/repository"
+	"github.com/sandlayth/supplier-api/helper"
+	"github.com/sandlayth/supplier-api/model"
+	"github.com/sandlayth/supplier-api/repository"
 )
 
 // PurchaseHandler handles HTTP requests related to purchases.
@@ -34,7 +35,7 @@ func (h *PurchaseHandler) CreatePurchaseHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	respondJSON(w, purchase)
+	helper.RespondJSON(w, purchase)
 }
 
 // GetPurchaseHandler handles requests to retrieve a purchase by ID.
@@ -53,7 +54,7 @@ func (h *PurchaseHandler) GetPurchaseHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	respondJSON(w, purchase)
+	helper.RespondJSON(w, purchase)
 }
 
 // UpdatePurchaseHandler handles requests to update a purchase by ID.
@@ -74,7 +75,7 @@ func (h *PurchaseHandler) UpdatePurchaseHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	respondJSON(w, updatedPurchase)
+	helper.RespondJSON(w, updatedPurchase)
 }
 
 // DeletePurchaseHandler handles requests to delete a purchase by ID.
@@ -88,7 +89,7 @@ func (h *PurchaseHandler) DeletePurchaseHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	respondJSON(w, map[string]string{"message": "Purchase deleted successfully"})
+	helper.RespondJSON(w, map[string]string{"message": "Purchase deleted successfully"})
 }
 
 // ListAllPurchasesHandler handles requests to retrieve a list of all purchases.
@@ -99,7 +100,7 @@ func (h *PurchaseHandler) ListAllPurchasesHandler(w http.ResponseWriter, r *http
 		return
 	}
 
-	respondJSON(w, purchases)
+	helper.RespondJSON(w, purchases)
 }
 
 // ListPurchasesByUserHandler handles requests to retrieve a list of purchases for a specific user.
@@ -113,5 +114,5 @@ func (h *PurchaseHandler) ListPurchasesByUserHandler(w http.ResponseWriter, r *h
 		return
 	}
 
-	respondJSON(w, purchases)
+	helper.RespondJSON(w, purchases)
 }

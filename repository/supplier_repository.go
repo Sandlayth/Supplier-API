@@ -1,6 +1,6 @@
 package repository
 
-import "github.com/sandlayth/supplier-api/public/model"
+import "github.com/sandlayth/supplier-api/model"
 
 type SupplierRepository interface {
 	CreateSupplier(supplier *model.Supplier) error
