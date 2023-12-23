@@ -10,7 +10,8 @@ func AddUserRoutes(r *mux.Router, handler *UserHandler) {
 	r.HandleFunc("/users/{id}", handler.UpdateUserHandler).Methods("PUT")
 	r.HandleFunc("/users/{id}", handler.DeleteUserHandler).Methods("DELETE")
 	r.HandleFunc("/users", handler.ListUsersHandler).Methods("GET")
-//	r.HandleFunc("/login", handler.LoginHandler).Methods("POST")
+    r.HandleFunc("/users/login", handler.LoginHandler).Methods("POST")
+    r.HandleFunc("/users/{id}/renew-token", handler.RenewTokenHandler).Methods("POST")
 //	r.HandleFunc("/logout", handler.LogoutHandler).Methods("POST")
 }
 

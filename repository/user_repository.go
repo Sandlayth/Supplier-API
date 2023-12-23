@@ -9,6 +9,8 @@ type UserRepository interface {
 	UpdateUser(id string, updatedUser *model.User) error
 	DeleteUser(id string) error
 	ListAll() (*[]model.User, error)
-	//GenerateAuthToken(user *model.User) (string, error)
-	//RevokeAuthToken(userID string) error
+	GetTokens(user *model.User) (string, string, error)
+	RenewTokens(userID string, refreshToken string) (string, string, error)
+    ValidateUserCredentials(user *model.User) error
+	//RevokeToken(userID string, refreshToken string) error
 }

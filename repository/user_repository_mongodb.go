@@ -9,7 +9,9 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"golang.org/x/crypto/bcrypt"
 
+	"github.com/sandlayth/supplier-api/helper"
 	"github.com/sandlayth/supplier-api/model"
 )
 
@@ -28,7 +30,11 @@ func (r *UserMongoRepository) CreateUser(user *model.User) error {
 	if err := r.validateUser(user); err != nil {
 		return err
 	}
-
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.MinCost)
+	if err != nil {
+		return err
+	}
+	user.Password = string(hashedPassword)
 	result, err := r.collection.InsertOne(context.Background(), user)
 	// Update the purchase with the new ID
 	insertedID, ok := result.InsertedID.(primitive.ObjectID)
@@ -73,6 +79,11 @@ func (r *UserMongoRepository) UpdateUser(id string, updatedUser *model.User) err
 	if err != nil {
 		return err
 	}
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(updatedUser.Password), bcrypt.MinCost)
+	if err != nil {
+		return err
+	}
+	updatedUser.Password = string(hashedPassword)
 	_, err = r.collection.UpdateOne(context.Background(), bson.M{"_id": objectID}, bson.M{"$set": updatedUser})
 	updatedUser.ID = objectID
 	return err
@@ -117,6 +128,55 @@ func (r *UserMongoRepository) ListAll() (*[]model.User, error) {
 	}
 
 	return &results, nil
+}
+
+func (r *UserMongoRepository) GetTokens(user *model.User) (string, string, error) {
+	// Generate refresh token
+	refreshToken, err := helper.GenerateRefreshToken(user)
+	if err != nil {
+		return "", "", err
+	}
+
+	// Generate access token
+	accessToken, err := helper.GenerateAccessToken(user)
+	if err != nil {
+		return "", "", err
+	}
+	return refreshToken, accessToken, nil
+}
+
+func (r *UserMongoRepository) RenewTokens(userID string, refreshToken string) (string, string, error) {
+	// Get the user from the DB
+	dbUser, err := r.GetUserByID(userID)
+	if err != nil {
+		return "", "", err
+	}
+	// Verify the refresh token and extract claims
+	claims, needsRefresh, err := helper.VerifyToken(refreshToken)
+	if err != nil {
+		return "", "", err
+	}
+	if userID != claims.UserID.Hex() {
+		return "", "", errors.New("invalid user ID in refresh token")
+	}
+	if needsRefresh {
+		return r.GetTokens(dbUser)
+	}
+	// Return the original refresh token
+	accessToken, err := helper.GenerateAccessToken(dbUser)
+	if err != nil {
+		return "", "", err
+	}
+	return accessToken, refreshToken, nil
+
+}
+
+func (r *UserMongoRepository) ValidateUserCredentials(user *model.User) error {
+	dbUser, err := r.GetUserByEmail(user.Email)
+	if err != nil {
+		return err
+	}
+	return bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(user.Password))
 }
 
 func (r *UserMongoRepository) validateUser(user *model.User) error {

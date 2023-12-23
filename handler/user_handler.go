@@ -18,7 +18,6 @@ func NewUserHandler(r repository.UserRepository) *UserHandler {
 	return &UserHandler{ur: r}
 }
 
-
 // CreateUserHandler handles requests to create a new user.
 func (h *UserHandler) CreateUserHandler(w http.ResponseWriter, r *http.Request) {
 	var user model.User
@@ -102,37 +101,55 @@ func (h *UserHandler) ListUsersHandler(w http.ResponseWriter, r *http.Request) {
 	helper.RespondJSON(w, users)
 }
 
-/*
 // LoginHandler handles requests for user login and generates an authentication token.
 func (h *UserHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
-	var credentials model.UserCredentials
-	err := json.NewDecoder(r.Body).Decode(&credentials)
+	var user model.User
+	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	user, err := h.ur.GetUserByEmail(credentials.Email)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := h.ur.ValidateUserCredentials(&user); err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
-	if user == nil || user.Password != credentials.Password {
-		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
+	dbUser, err := h.ur.GetUserByEmail(user.Email)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// Generate authentication token
-	token, err := h.ur.GenerateAuthToken(user)
+	refreshToken, accessToken, err := h.ur.GetTokens(dbUser)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	helper.RespondJSON(w, map[string]string{"refresh_token": refreshToken, "access_token": accessToken})
+}
+
+func (h *UserHandler) RenewTokenHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userID := vars["id"]
+	refreshToken := r.Header.Get("Authorization")
+
+	// Renew tokens for the user
+	newAccessToken, newRefreshToken, err := h.ur.RenewTokens(userID, refreshToken)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	helper.RespondJSON(w, map[string]string{"token": token})
+	// Respond with the new tokens
+	helper.RespondJSON(w, map[string]string{
+		"access_token":  newAccessToken,
+		"refresh_token": newRefreshToken,
+	})
 }
 
+/*
 // LogoutHandler handles requests to revoke the authentication token for a user.
 func (h *UserHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("UserID")
