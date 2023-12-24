@@ -28,7 +28,12 @@ func (h *PurchaseHandler) CreatePurchaseHandler(w http.ResponseWriter, r *http.R
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
+	claims, ok := r.Context().Value("userClaims").(*model.Claims)
+	if !ok {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	purchase.UserID = claims.UserID
 	err = h.pr.CreatePurchase(&purchase)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -53,7 +58,14 @@ func (h *PurchaseHandler) GetPurchaseHandler(w http.ResponseWriter, r *http.Requ
 		http.NotFound(w, r)
 		return
 	}
-
+	claims, ok := r.Context().Value("userClaims").(*model.Claims)
+	if !ok {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if claims.UserID.Hex() != purchase.ID.Hex() {
+		helper.RespondJSON(w, nil)
+	}
 	helper.RespondJSON(w, purchase)
 }
 
@@ -94,7 +106,18 @@ func (h *PurchaseHandler) DeletePurchaseHandler(w http.ResponseWriter, r *http.R
 
 // ListAllPurchasesHandler handles requests to retrieve a list of all purchases.
 func (h *PurchaseHandler) ListAllPurchasesHandler(w http.ResponseWriter, r *http.Request) {
-	purchases, err := h.pr.ListAll()
+	var purchases []model.Purchase
+	var err error
+	claims, ok := r.Context().Value("userClaims").(*model.Claims)
+	if !ok {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if claims.Role == "admin" {
+		purchases, err = h.pr.ListAll()
+	} else {
+		purchases, err = h.pr.ListPurchasesByUser(claims.UserID.Hex())
+	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

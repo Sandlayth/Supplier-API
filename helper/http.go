@@ -1,6 +1,7 @@
 package helper
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -36,7 +37,8 @@ func authorizationMiddleware(next http.Handler, role string) http.Handler {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
-
+		ctx := context.WithValue(r.Context(), "userClaims", claims)
+		r = r.WithContext(ctx)
 		// Token is valid, proceed to the next handler
 		next.ServeHTTP(w, r)
 	})
