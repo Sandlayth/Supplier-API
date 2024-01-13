@@ -6,13 +6,13 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/sandlayth/supplier-api/repository"
+	"github.com/rs/cors"
 	"github.com/sandlayth/supplier-api/handler"
+	"github.com/sandlayth/supplier-api/repository"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
 
 func main() {
 	client := initDb()
@@ -38,8 +38,19 @@ func main() {
 	handler.AddSupplierRoutes(router, supplierHandler)
 	handler.AddPurchaseRoutes(router, purchaseHandler)
 
+	cors := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{
+			http.MethodPost,
+			http.MethodGet,
+		},
+		AllowedHeaders:   []string{"*"},
+		})
+
+	corsRouter := cors.Handler(router)
+
 	// Start the HTTP server
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(":8080", corsRouter))
 }
 
 func initDb() *mongo.Client {
