@@ -7,4 +7,5 @@ type Location struct {
 	Name     string  `json:"name"`
 	Price    float64 `json:"price"`
 	SupplierID primitive.ObjectID  `json:"supplier" bson:"supplier"`
+	SupplierName string  `json:"supplierName" bson:"supplierName"`
 }

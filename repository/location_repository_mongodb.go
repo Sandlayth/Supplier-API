@@ -76,7 +76,20 @@ func (r *LocationMongoRepository) DeleteLocation(id string) error {
 // ListAll retrieves a list of all locations from the database.
 func (r *LocationMongoRepository) ListAll() ([]model.Location, error) {
 	var locations []model.Location
-	cursor, err := r.locationsCollection.Find(context.Background(), bson.M{})
+
+	pipeline := bson.A{
+		bson.D{{"$lookup", bson.D{{"from", "suppliers"}, {"localField", "supplier"}, {"foreignField", "_id"}, {"as", "supplierInfo"}}}},
+		bson.D{{"$unwind", "$supplierInfo"}},
+		bson.D{{"$project", bson.D{
+			{"_id", 1},
+			{"name", 1},
+			{"price", 1},
+			{"supplier", 1},
+			{"supplierName", "$supplierInfo.name"},
+		}}},
+	}
+
+	cursor, err := r.locationsCollection.Aggregate(context.Background(), pipeline)
 	if err != nil {
 		return nil, err
 	}
