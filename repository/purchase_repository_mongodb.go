@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/sandlayth/supplier-api/model"
 	"go.mongodb.org/mongo-driver/bson"
@@ -14,8 +15,9 @@ import (
 
 // PurchaseMongoRepository is a concrete implementation of PurchaseRepository using MongoDB.
 type PurchaseMongoRepository struct {
-	purchasesCollection *mongo.Collection
 	locationsCollection *mongo.Collection
+	purchasesCollection *mongo.Collection
+	suppliersCollection *mongo.Collection
 	usersCollection     *mongo.Collection
 }
 
@@ -23,6 +25,7 @@ func NewPurchaseMongoRepository(db *mongo.Database) *PurchaseMongoRepository {
 	return &PurchaseMongoRepository{
 		purchasesCollection: db.Collection("purchases"),
 		locationsCollection: db.Collection("locations"),
+		suppliersCollection: db.Collection("suppliers"),
 		usersCollection:     db.Collection("users"),
 	}
 }
@@ -101,17 +104,28 @@ func (r *PurchaseMongoRepository) DeletePurchase(id string) error {
 
 // ListAll retrieves a list of all purchases from the database.
 func (r *PurchaseMongoRepository) ListAll() ([]model.Purchase, error) {
-	var purchases []model.Purchase
-	cursor, err := r.purchasesCollection.Find(context.Background(), bson.M{})
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(context.Background())
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-	err = cursor.All(context.Background(), &purchases)
+	pipeline := bson.A{
+    bson.D{{"$lookup", bson.D{{"from", "locations"}, {"localField", "location"}, {"foreignField", "_id"}, {"as", "locationInfo"}}}},
+    bson.D{{"$unwind", "$locationInfo"}},
+    bson.D{{"$lookup", bson.D{{"from", "suppliers"}, {"localField", "locationInfo.supplier"}, {"foreignField", "_id"}, {"as", "supplierInfo"}}}},
+    bson.D{{"$unwind", "$supplierInfo"}},
+    bson.D{{"$project", bson.D{{"_id", 1}, {"quantity", 1}, {"date", 1}, {"fees", 1}, {"totalPrice", 1}, {"user", 1}, {"location", 1}, {"locationName", "$locationInfo.name"}, {"supplierName", "$supplierInfo.name"}}}},
+	}
+
+	cursor, err := r.purchasesCollection.Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, err
 	}
+	defer cursor.Close(ctx)
+
+	var purchases []model.Purchase
+	if err := cursor.All(ctx, &purchases); err != nil {
+		return nil, err
+	}
+
 	return purchases, nil
 }
 
@@ -126,7 +140,28 @@ func (r *PurchaseMongoRepository) ListPurchasesByUser(user string) ([]model.Purc
 	}
 
 	var purchases []model.Purchase
-	cursor, err := r.purchasesCollection.Find(context.Background(), bson.M{"user": userID})
+
+	pipeline := bson.A{
+		bson.D{{"$match", bson.D{{"user", userID}}}},
+		bson.D{{"$lookup", bson.D{{"from", "locations"}, {"localField", "location"}, {"foreignField", "_id"}, {"as", "locationInfo"}}}},
+		bson.D{{"$lookup", bson.D{{"from", "suppliers"}, {"localField", "locationInfo.supplier"}, {"foreignField", "_id"}, {"as", "supplierInfo"}}}},
+		bson.D{{"$unwind", "$locationInfo"}},
+		bson.D{{"$unwind", "$supplierInfo"}},
+		bson.D{{"$project", bson.D{
+			{"_id", 1},
+			{"quantity", 1},
+			{"date", 1},
+			{"fees", 1},
+			{"totalPrice", 1},
+			{"user", 1},
+			{"location", 1},
+			{"locationName", "$locationInfo.name"},
+			{"supplierName", "$supplierInfo.name"},
+		}}},
+	}
+
+	cursor, err := r.purchasesCollection.Aggregate(context.Background(), pipeline)
+
 	if err != nil {
 		return nil, err
 	}
