@@ -16,4 +16,5 @@ type Purchase struct {
 	LocationID   primitive.ObjectID `json:"location" bson:"location"`
 	LocationName string             `json:"locationName" bson:"locationName"`
 	SupplierName string             `json:"supplierName" bson:"supplierName"`
+	UserName 	 string				`json:"userName" bson:"userName"`
 }

@@ -108,11 +108,24 @@ func (r *PurchaseMongoRepository) ListAll() ([]model.Purchase, error) {
 	defer cancel()
 
 	pipeline := bson.A{
-    bson.D{{"$lookup", bson.D{{"from", "locations"}, {"localField", "location"}, {"foreignField", "_id"}, {"as", "locationInfo"}}}},
-    bson.D{{"$unwind", "$locationInfo"}},
-    bson.D{{"$lookup", bson.D{{"from", "suppliers"}, {"localField", "locationInfo.supplier"}, {"foreignField", "_id"}, {"as", "supplierInfo"}}}},
-    bson.D{{"$unwind", "$supplierInfo"}},
-    bson.D{{"$project", bson.D{{"_id", 1}, {"quantity", 1}, {"date", 1}, {"fees", 1}, {"totalPrice", 1}, {"user", 1}, {"location", 1}, {"locationName", "$locationInfo.name"}, {"supplierName", "$supplierInfo.name"}}}},
+		bson.D{{"$lookup", bson.D{{"from", "locations"}, {"localField", "location"}, {"foreignField", "_id"}, {"as", "locationInfo"}}}},
+		bson.D{{"$unwind", "$locationInfo"}},
+		bson.D{{"$lookup", bson.D{{"from", "suppliers"}, {"localField", "locationInfo.supplier"}, {"foreignField", "_id"}, {"as", "supplierInfo"}}}},
+		bson.D{{"$unwind", "$supplierInfo"}},
+		bson.D{{"$lookup", bson.D{{"from", "users"}, {"localField", "user"}, {"foreignField", "_id"}, {"as", "userInfo"}}}},
+		bson.D{{"$unwind", "$userInfo"}},
+		bson.D{{"$project", bson.D{
+			{"_id", 1},
+			{"quantity", 1},
+			{"date", 1},
+			{"fees", 1},
+			{"totalPrice", 1},
+			{"user", 1},
+			{"location", 1},
+			{"locationName", "$locationInfo.name"},
+			{"supplierName", "$supplierInfo.name"},
+			{"userName", "$userInfo.email"},
+		}}},
 	}
 
 	cursor, err := r.purchasesCollection.Aggregate(ctx, pipeline)
